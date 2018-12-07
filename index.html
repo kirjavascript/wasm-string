@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>wasm-string</title>
+        <script>
+            fetch('main.wasm').then(response =>
+                response.arrayBuffer()
+            ).then(bytes =>
+                WebAssembly.instantiate(bytes, {})
+            ).then(results => {
+                const pointer = results.instance.exports.get_string();
+                const buffer = new Uint8Array(
+                    results.instance.exports.memory.buffer,
+                    pointer,
+                    4,
+                );
+                alert(String.fromCharCode(...buffer))
+            });
+        </script>
+    </head>
+</html>
