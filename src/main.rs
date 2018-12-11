@@ -1,4 +1,3 @@
-#![feature(repr_transparent)]
 use std::ffi::CString;
 use std::os::raw::c_char;
 
@@ -26,7 +25,7 @@ pub unsafe extern "C" fn get_mut_js_string(string: JSString) -> *mut u8 {
 }
 
 #[repr(transparent)]
-pub struct JSString(*mut String);
+pub struct JSString(pub *mut String);
 
 impl JSString {
     fn to_owned(self) -> Box<String> {
@@ -77,8 +76,7 @@ fn get_test_string() -> &'static str {
 
 #[no_mangle]
 pub extern "C" fn receive_string(string: JSString) {
-    // string.to_owned();
-    console_log(&format!("string came from rust: {}", &string.to_owned()));
+    console_log(&format!("string came from rust: {:?}", &string.to_owned()));
 }
 
 

@@ -1,6 +1,6 @@
 wasm-string
 ======
 
-export a string from Rust to JS
+pass strings between Rust and JS
 
 setup: https://www.hellorust.com/setup/wasm-target/

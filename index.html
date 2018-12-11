@@ -33,15 +33,15 @@
                 function createString(str) {
                     const encoder = new TextEncoder();
                     const encodedString = encoder.encode(str);
-                    const stringPtr = exports.alloc_js_string(str.length);
+                    const stringPtr = exports.alloc_js_string(encodedString.length);
                     const mutStringPtr = exports.get_mut_js_string(stringPtr);
                     const asBytes = new Uint8Array(
                         exports.memory.buffer,
                         mutStringPtr,
-                        str.length,
+                        encodedString.length,
                     );
                     asBytes.set(encodedString);
-                    return mutStringPtr;
+                    return stringPtr;
                 }
 
                 // examples
