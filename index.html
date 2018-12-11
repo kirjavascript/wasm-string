@@ -4,28 +4,32 @@
         <meta charset="utf-8">
         <title>wasm-string</title>
         <script>
-            let strLen;
-
-            function stringExporter(instance) {
-                return function getString(str) {
-                    const pointer = instance.exports[str](false);
-                    const buffer = new Uint8Array(
-                        instance.exports.memory.buffer,
-                        pointer,
-                        strLen,
-                    );
-                    return String.fromCharCode(...buffer);
-                }
-            }
-
+            const stack = [];
             fetch('main.wasm').then(response =>
                 response.arrayBuffer()
             ).then(bytes =>
                 WebAssembly.instantiate(bytes, { env: {
-                    set_length: (num) => {strLen = num;},
+                    stack_push: (thing) => {stack.push(thing);},
+                    console_log_stack: () => {
+                        console.log(
+                            String.fromCharCode(...stack.splice(0, stack.length))
+                        );
+                    }
                 }})
             ).then(results => {
-                const getString = stringExporter(results.instance);
+                const { instance } = results;
+                function getString(str) {
+                    instance.exports[str]();
+                    const [pointer, length] = [stack.pop(), stack.pop()];
+                    const buffer = new Uint8Array(
+                        instance.exports.memory.buffer,
+                        pointer,
+                        length,
+                    );
+                    const string = String.fromCharCode(...buffer);
+                    instance.exports.deallocate_string(pointer);
+                    return string;
+                }
 
                 alert(getString('string_export'));
             });
