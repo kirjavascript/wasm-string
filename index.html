@@ -4,18 +4,27 @@
         <meta charset="utf-8">
         <title>wasm-string</title>
         <script>
+            function stringExporter(instance) {
+                return function getString(str) {
+                    const pointer = instance.exports[str]();
+                    const length = instance.exports[str](true);
+                    const buffer = new Uint8Array(
+                        instance.exports.memory.buffer,
+                        pointer,
+                        length,
+                    );
+                    return String.fromCharCode(...buffer);
+                }
+            }
+
             fetch('main.wasm').then(response =>
                 response.arrayBuffer()
             ).then(bytes =>
                 WebAssembly.instantiate(bytes, {})
             ).then(results => {
-                const pointer = results.instance.exports.get_string();
-                const buffer = new Uint8Array(
-                    results.instance.exports.memory.buffer,
-                    pointer,
-                    4,
-                );
-                alert(String.fromCharCode(...buffer))
+                const getString = stringExporter(results.instance);
+
+                alert(getString('string_export'));
             });
         </script>
     </head>

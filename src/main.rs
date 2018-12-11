@@ -1,12 +1,28 @@
-static STR: &'static str = "test";
-
 use std::ffi::CString;
 use std::os::raw::c_char;
 
-#[no_mangle]
-pub extern "C" fn get_string(input: &str) -> *mut c_char {
-    let s = CString::new(STR).unwrap();
-    s.into_raw()
+macro_rules! export_string {
+    ($name:ident, $exec:expr) => {
+        #[no_mangle]
+        pub extern "C" fn $name(get_len: bool) -> usize {
+            if get_len {
+                $exec.len()
+            } else {
+                let s = CString::new($exec)
+                    .expect("must be a valid C string");
+                s.into_raw() as *mut c_char as usize
+            }
+        }
+    }
 }
 
-fn main() { }
+
+fn get_string() -> String {
+    "test string".to_string()
+}
+
+export_string!(string_export, get_string());
+export_string!(poop, "poop");
+
+fn main() {
+}
