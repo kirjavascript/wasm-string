@@ -4,14 +4,15 @@
         <meta charset="utf-8">
         <title>wasm-string</title>
         <script>
+            let strLen;
+
             function stringExporter(instance) {
                 return function getString(str) {
-                    const pointer = instance.exports[str]();
-                    const length = instance.exports[str](true);
+                    const pointer = instance.exports[str](false);
                     const buffer = new Uint8Array(
                         instance.exports.memory.buffer,
                         pointer,
-                        length,
+                        strLen,
                     );
                     return String.fromCharCode(...buffer);
                 }
@@ -20,7 +21,9 @@
             fetch('main.wasm').then(response =>
                 response.arrayBuffer()
             ).then(bytes =>
-                WebAssembly.instantiate(bytes, {})
+                WebAssembly.instantiate(bytes, { env: {
+                    set_length: (num) => {strLen = num;},
+                }})
             ).then(results => {
                 const getString = stringExporter(results.instance);
 
