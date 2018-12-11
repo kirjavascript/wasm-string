@@ -17,21 +17,23 @@
                     }
                 }})
             ).then(results => {
-                const { instance } = results;
+                const { exports } = results.instance;
                 function getString(str) {
-                    instance.exports[str]();
+                    exports[str]();
                     const [pointer, length] = [stack.pop(), stack.pop()];
                     const buffer = new Uint8Array(
-                        instance.exports.memory.buffer,
+                        exports.memory.buffer,
                         pointer,
                         length,
                     );
                     const string = String.fromCharCode(...buffer);
-                    instance.exports.deallocate_string(pointer);
+                    exports.deallocate_string(pointer);
                     return string;
                 }
 
-                alert(getString('string_export'));
+                // examples
+
+                alert(getString('TEST_STRING'));
             });
         </script>
     </head>
