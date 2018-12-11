@@ -1,7 +1,8 @@
+#![feature(repr_transparent)]
 use std::ffi::CString;
 use std::os::raw::c_char;
 
-// imports from js
+// imported functions
 
 #[no_mangle]
 extern "C" {
@@ -9,12 +10,34 @@ extern "C" {
     fn console_log_stack();
 }
 
-// https://stackoverflow.com/questions/49014610/passing-a-javascript-string-to-a-rust-function-compiled-to-webassembly/49020435
+// importing strings from JS
+
+#[no_mangle]
+pub unsafe extern "C" fn alloc_js_string(cap: usize) -> JSString {
+    let mut d = Vec::with_capacity(cap);
+    d.set_len(cap);
+    let s = Box::new(String::from_utf8_unchecked(d));
+    JSString(Box::into_raw(s))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn get_mut_js_string(string: JSString) -> *mut u8 {
+    (&mut *string.0).as_mut_vec().as_mut_ptr()
+}
+
+#[repr(transparent)]
+pub struct JSString(*mut String);
+
+impl JSString {
+    fn to_owned(self) -> Box<String> {
+        unsafe { Box::from_raw(self.0) } // dealloc js string
+    }
+}
 
 // exports to js
 
 #[no_mangle]
-pub extern "C" fn deallocate_string(ptr: *mut c_char) {
+pub extern "C" fn dealloc_rust_string(ptr: *mut c_char) {
     unsafe { let _ = CString::from_raw(ptr); }
 }
 
@@ -46,9 +69,17 @@ pub fn console_log(string: &str) {
 
 // examples
 
-export_string!(TEST_STRING, get_string());
-fn get_string() -> &'static str {
+export_string!(TEST_STRING, get_test_string());
+
+fn get_test_string() -> &'static str {
     "test string"
 }
+
+#[no_mangle]
+pub extern "C" fn receive_string(string: JSString) {
+    // string.to_owned();
+    console_log(&format!("string came from rust: {}", &string.to_owned()));
+}
+
 
 fn main() { }
