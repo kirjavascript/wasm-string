@@ -1,5 +1,7 @@
 use std::ffi::CString;
 use std::os::raw::c_char;
+use std::ops::Drop;
+use std::ptr;
 
 // imported functions
 
@@ -20,16 +22,31 @@ pub unsafe extern "C" fn alloc_js_string(cap: usize) -> JSString {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn get_mut_js_string(string: JSString) -> *mut u8 {
-    (&mut *string.0).as_mut_vec().as_mut_ptr()
+pub extern "C" fn get_mut_js_string(mut string: JSString) -> *mut u8 {
+    string.as_mut_ptr()
 }
 
 #[repr(transparent)]
 pub struct JSString(pub *mut String);
 
 impl JSString {
-    fn to_owned(self) -> Box<String> {
-        unsafe { Box::from_raw(self.0) } // dealloc js string
+    fn to_owned(&mut self) -> Box<String> {
+        let boxed_string = unsafe { Box::from_raw(self.0) };
+        self.0 = ptr::null_mut();
+        boxed_string
+    }
+    fn as_mut_ptr(&mut self) -> *mut u8 {
+        let ptr = unsafe { (&mut *self.0).as_mut_vec() }.as_mut_ptr();
+        self.0 = ptr::null_mut();
+        ptr
+    }
+}
+
+impl Drop for JSString {
+    fn drop(&mut self) {
+        if !self.0.is_null() {
+            unsafe { Box::from_raw(self.0); }
+        }
     }
 }
 
@@ -75,7 +92,7 @@ fn get_test_string() -> &'static str {
 }
 
 #[no_mangle]
-pub extern "C" fn receive_string(string: JSString) {
+pub extern "C" fn receive_string(mut string: JSString) {
     console_log(&format!("string came from rust: {:?}", &string.to_owned()));
 }
 
