@@ -10,7 +10,6 @@ extern "C" {
 }
 
 // importing strings from JS
-// source: https://stackoverflow.com/questions/49014610/passing-a-javascript-string-to-a-rust-function-compiled-to-webassembly/49020435
 
 #[no_mangle]
 pub unsafe extern "C" fn alloc_js_string(cap: usize) -> JSString {
